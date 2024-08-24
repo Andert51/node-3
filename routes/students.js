@@ -1,8 +1,8 @@
 import express from 'express'
-import bcrypt from 'bcryptjs'
+import bcrypt from 'bcrypt'
 import admin from 'firebase-admin'
 import serviceAccount from '../.config/firebaseServiceAccount.json' with {type: 'json'}
-import { verifyToken } from './auth.js'
+import { generateToken, verifyToken } from './auth.js'
 
 
 //Inicializar Firebase
@@ -35,9 +35,37 @@ function authenticateToken(req, res, next){
     }
 }
 
+    router.post('/login', async (req, res) => {
+        const {usser, password} = req.body
+        const findUsser = await studentsCollect.where('usser', '==', usser).get()
+
+        if (findUsser.empty) {
+            return res.status(400).json({
+                    error: 'Usser does not exist!'
+                })
+        }
+        //si se encuentra aglo por defecto se usa esa informacion, funciona con doc
+        const userDoc = findUsser.docs[0]
+        const userdata = userDoc.data()
+
+        const validPassword = await bcrypt.compare(password, userdata.password)
+
+        if (!validPassword) { //No pensar como un booleano sino como una existencia de objeto o no existemcia
+            return res.status(400).json({
+                    error: 'Password Invalid'
+                })
+        }
+
+        const token = generateToken({
+            id: userDoc.id, usser: usser})
+            res.status(201).json({
+                token
+            })
+    })
+
 //EndPoints
 //Crear Estudiantes, validaciones con password, token
-router.post('/create', /*authenticateToken ,*/ async (req, res) => {
+router.post('/create', authenticateToken , async (req, res) => {
     const { name, apaterno, amaterno, direccion, 
         telefono, mail, usser, password } = req.body
 
@@ -69,12 +97,24 @@ router.post('/create', /*authenticateToken ,*/ async (req, res) => {
             direccion,
             telefono,
             mail,
+            usser,
             password: passHashed
         })
         res.status(201).json({
             message: 'success'
         })
     })
+
+//     { 
+//   "name": "Andert",
+//   "apaterno": "Gamer",
+//   "amaterno": "Pro",
+//   "direccion": "UG",
+//   "telefono": "3541017633",
+//   "mail": "andertjuji@gmail.com",
+//   "usser": "andert51",
+//   "password": "12345"
+// }
 
         router.get('/all', async(req, res) => {
             const colStudents = await studentsCollect.get()
