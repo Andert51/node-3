@@ -29,7 +29,7 @@
         try {
             const user = verifyToken(token)
             req.user = user 
-            next()
+            next()  
         } catch (error) {
             res.sendSatus(403)
         }   
@@ -65,9 +65,9 @@
 
     //EndPoints
     //Crear Estudiantes, validaciones con password, token
-    router.post('/create', /* authenticateToken,  */ async (req, res) => {
+    router.post('/create', authenticateToken, async (req, res) => {
         const { name, apaterno, amaterno, direccion, 
-            telefono, mail, user, password } = req.body
+            telefono, mail,  user, password } = req.body
 
             //Validar correo y usuario
             const findUser = await studentsCollect.where('user', '==', user).get()
