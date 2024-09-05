@@ -146,58 +146,53 @@
             })
 
             // Modificar un estudiante por ID
-            router.put('/student/:id', async (req, res) => {
+            router.put('/student/:id', authenticateToken, async (req, res) => {
                 const id = req.params.id
                 const { name, apaterno, amaterno, direccion,
                         telefono, mail, user, password } = req.body
             
-                const studentRef = studentsCollect.doc(id)
-                const studentDoc = await studentRef.get()
-            
+               const studentDoc = await studentsCollect.doc(id).get()
+
                 if (!studentDoc.exists) {
                     return res.status(404).json({
                         error: 'Student not found!'
                     })
                 }
 
-                //Validar correo y usuario
-                const findUser = await studentsCollect.where('user', '==', user).get()
+                // //Validar correo y usuario, se retira para el front
+                // const findUser = await studentsCollect.where('user', '==', user).get()
 
-                const findMail = await studentsCollect.where('mail', '==', mail).get()
+                // const findMail = await studentsCollect.where('mail', '==', mail).get()
 
-                if(!findUser.empty){
-                    return res.status(400).json({
-                        error: 'User already exist!'
-                })
-                }
+                // if(!findUser.empty){
+                //     return res.status(400).json({
+                //         error: 'User already exist!'
+                // })
+                // }
 
-                if(!findMail.empty){
-                    return res.status(400).json({
-                    error: 'Mail already exist!'
-                })
-                }
+                // if(!findMail.empty){
+                //     return res.status(400).json({
+                //     error: 'Mail already exist!'
+                // })
+                // }
                 
-                // Actucalizar valores
-                const updates = {
+                const passHashed = await bcrypt.hash(password, 10)
+
+                await studentsCollect.doc(id).update({
                     name,
                     apaterno,
                     amaterno,
                     direccion,
                     telefono,
                     mail,
-                    user
-                }
-            
-                // Si se proporciona una nueva contraseña, encriptarla
-                if (password) {
-                    const passHashed = await bcrypt.hash(password, 10)
-                    updates.password = passHashed
-                }
-            
-                await studentRef.update(updates)
-                res.status(200).json({
-                    message: 'Student updated successfully'
+                    user,
+                    password: passHashed
                 })
+
+                res.status(201).json({
+                    message: 'success'
+                })
+                
             })
 
             // Eliminar Estudiante por ID
